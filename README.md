@@ -1,3 +1,28 @@
+# preload-webpack-plugin fork
+
+This fork has been modified with ability to specify an additional attribute `onload="this.onload=null;this.rel='stylesheet'"` when adding css links. Without this, the css that is downloaded will not be applied automatically.
+
+The new option is enabled by setting `applyCss: true`
+
+For example :
+
+```
+new PreloadWebpackPlugin({
+  rel: 'preload',
+  include: 'allAssets',
+  fileWhitelist: [ /\.css$/, /\.woff2$/ ],
+  applyCss: true
+}),
+```
+
+The plugin has also been updated so that it removes any existing links from the html that point to the same href location as any of the new links that are added by the plugin. I am not sure why it does not do this already.
+
+An alternative is to configure HtmlWebpackPlugin not to add the links that will be added by this plugin, that that results in additional configuration that is harder to maintain.
+
+This was forked from master which was the same as version 3.0.0-beta.2 at the time.
+
+original readme:
+============
 preload-webpack-plugin
 ============
 [![NPM version][npm-img]][npm-url]

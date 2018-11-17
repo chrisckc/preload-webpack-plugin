@@ -79,6 +79,7 @@ const defaultOptions = {
   include: 'asyncChunks',
   fileBlacklist: [/\.map/],
   excludeHtmlNames: [],
+  applyCss: false // if true, adds onload="this.onload=null;this.rel='stylesheet'" attribute to css links
 };
 
 class PreloadPlugin {
@@ -259,6 +260,11 @@ class PreloadPlugin {
         return this.options.fileBlacklist.every(regex => regex.test(entry) === false);
       }).forEach(entry => {
         entry = `${publicPath}${entry}`;
+        console.log('preload-webpack-plugin: processing chunk.file:', entry);
+        let onload = '';
+        if (entry.match(/\.css$/) && this.options.applyCss) {
+          onload = ' onload="this.onload=null;this.rel=\'stylesheet\'"';
+        }
         if (options.rel === 'preload') {
           // If `as` value is not provided in option, dynamically determine the correct
           // value depends on suffix of filename. Otherwise use the given `as` value.
@@ -272,15 +278,24 @@ class PreloadPlugin {
           } else {
             asValue = options.as;
           }
-          const crossOrigin = asValue === 'font' ? 'crossorigin="crossorigin" ' : '';
-          filesToInclude+= `<link rel="${options.rel}" as="${asValue}" ${crossOrigin}href="${entry}">\n`;
+          const crossOrigin = asValue === 'font' ? 'crossorigin="anonymous" ' : '';
+          filesToInclude+= `<link rel="${options.rel}" as="${asValue}" ${crossOrigin}href="${entry}"${onload}>\n`;
         } else {
           // If preload isn't specified, the only other valid entry is prefetch here
           // You could specify preconnect but as we're dealing with direct paths to resources
           // instead of origins that would make less sense.
-          filesToInclude+= `<link rel="${options.rel}" href="${entry}">\n`;
+          filesToInclude+= `<link rel="${options.rel}" href="${entry}"${onload}>\n`;
+        }
+        // remove any existing links for the same entry
+        const expression = `(<link[^>]*href="${entry}"[^>]*>)([^<]*</link>)?`;
+        const regEx = new RegExp(expression, 'i');
+        const found = htmlPluginData.html.match(regEx);
+        if (found) {
+          console.log('preload-webpack-plugin: removing existing link from html:', found[0]);
+          htmlPluginData.html = htmlPluginData.html.replace(regEx, '');
         }
       });
+    console.log('preload-webpack-plugin: adding new links to html:', filesToInclude);
     if (htmlPluginData.html.indexOf('</head>') !== -1) {
       // If a valid closing </head> is found, update it to include preload/prefetch tags
       htmlPluginData.html = htmlPluginData.html.replace('</head>', filesToInclude + '</head>');
