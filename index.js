@@ -295,7 +295,7 @@ class PreloadPlugin {
           htmlPluginData.html = htmlPluginData.html.replace(regEx, '');
         }
       });
-    console.log('preload-webpack-plugin: adding new links to html:', filesToInclude);
+    console.log('preload-webpack-plugin: adding new links to html:\n', filesToInclude);
     if (htmlPluginData.html.indexOf('</head>') !== -1) {
       // If a valid closing </head> is found, update it to include preload/prefetch tags
       htmlPluginData.html = htmlPluginData.html.replace('</head>', filesToInclude + '</head>');
